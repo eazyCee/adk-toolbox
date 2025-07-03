@@ -1,0 +1,101 @@
+sources:
+  bigquery-source:
+    kind: bigquery
+    project: ${PROJECT_ID}
+tools:
+  get-peak-hours:
+    kind: bigquery-sql
+    source: bigquery-source
+    description: |
+        "get peak hours of the restaurant. Takes the restaurant name to put into the query       
+        Example:
+        {{
+            "restaurant": "remboelan"
+        }}"
+    statement: |
+        SELECT 
+            EXTRACT(HOUR FROM salesDateIn) AS HourOfDay, 
+            COUNT(DISTINCT salesNum) AS NumberOfTransactions 
+        FROM `esbpoc.tr_saleshead_*`
+        WHERE _TABLE_SUFFIX = @restaurant
+        GROUP BY HourOfDay ORDER BY NumberOfTransactions DESC;
+    parameters:
+      - name: restaurant
+        type: string
+        description: Name of restaurant
+  get-total-sales:
+    kind: bigquery-sql
+    source: bigquery-source
+    description: |
+        "get total sales of the restaurant. Takes the restaurant name to put into the query       
+        Example:
+        {{
+            "restaurant": "remboelan"
+        }}""
+    statement: |
+        SELECT 
+            FORMAT_DATE('%Y-%m', salesDate) AS SaleMonth, 
+            SUM(grandTotal) AS TotalRevenue, 
+            COUNT(DISTINCT salesNum) AS NumberOfTransactions, 
+            AVG(grandTotal) AS AverageTransactionValue 
+        FROM `esbpoc.tr_saleshead_*`
+        WHERE _TABLE_SUFFIX = @restaurant
+        GROUP BY SaleMonth 
+        ORDER BY SaleMonth;
+    parameters:
+      - name: restaurant
+        type: string
+        description: Name of restaurant
+  get-peak-day:
+    kind: bigquery-sql
+    source: bigquery-source
+    description: |
+        "get the peak DAY of the restaurant. Takes the restaurant name to put into the query       
+        Example:
+        {{
+            "restaurant": "remboelan"
+        }}""
+    statement: |
+        SELECT 
+            EXTRACT(DAYOFWEEK FROM salesDate) AS DayOfWeek, 
+            COUNT(DISTINCT salesNum) AS NumberOfTransactions         
+        FROM `esbpoc.tr_saleshead_*`
+        WHERE _TABLE_SUFFIX = @restaurant 
+        GROUP BY DayOfWeek 
+        ORDER BY NumberOfTransactions DESC;
+    parameters:
+      - name: restaurant
+        type: string
+        description: Name of restaurant
+  get-branch-performance:
+    kind: bigquery-sql
+    source: bigquery-source
+    description: |
+        "get the sales performance of the restaurant's branches. Takes the restaurant name to put into the query       
+        Example:
+        {{
+            "restaurant": "remboelan"
+        }}""
+    statement: |
+        SELECT 
+            branchID,
+            branchName,
+            SUM(grandTotal) AS TotalRevenue, 
+            COUNT(DISTINCT salesNum) AS NumberOfTransactions, 
+            AVG(grandTotal) AS AverageTransactionValue, SUM(paxTotal) AS TotalGuestsServed         
+        FROM `esbpoc.tr_saleshead_*`
+        WHERE _TABLE_SUFFIX = @restaurant
+        GROUP BY branchID, branchName
+        ORDER BY TotalRevenue DESC;
+    parameters:
+      - name: restaurant
+        type: string
+        description: Name of restaurant
+toolsets:
+  my-toolset:
+    - get-peak-hours
+    - get-total-sales
+    - get-branch-performance
+    - get-peak-day
+
+    
