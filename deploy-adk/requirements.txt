@@ -5,3 +5,4 @@ google-genai
 flask
 psycopg2
 uvicorn
+python-dotenv
