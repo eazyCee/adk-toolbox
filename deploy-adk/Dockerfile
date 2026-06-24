@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y libpq-dev build-essential && rm -rf /va
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose the A2A port
-EXPOSE 8080
+EXPOSE 8001
 
 # Run the A2A agent (FastAPI) with Uvicorn
-CMD ["uvicorn", "agent.agent:a2a_app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "agent.agent:a2a_app", "--host", "0.0.0.0", "--port", "8001"]
