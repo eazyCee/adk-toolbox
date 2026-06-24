@@ -20,6 +20,7 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.sessions import DatabaseSessionService
 from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
 from google.genai import types
+from google.adk.a2a.utils.agent_to_a2a import to_a2a
 import os
 from flask import Flask, request, jsonify
 
@@ -109,5 +110,7 @@ def chat():
     except Exception as e:
         print(f"An error occurred: {e}")
     
+a2a_app = to_a2a(root_agent, port=int(os.environ.get('A2A_PORT', 8001)))
+
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

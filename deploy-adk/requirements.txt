@@ -1,6 +1,7 @@
 toolbox-langchain
-google-adk
+google-adk[a2a]
 langchain
 google-genai
 flask
 psycopg2
+uvicorn

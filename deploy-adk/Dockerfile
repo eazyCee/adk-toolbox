@@ -36,7 +36,4 @@ ENV PORT 8080
 # Run the web server on container startup.
 # Use gunicorn for production deployments. Install it first.
 # RUN pip install gunicorn
-RUN pip install gunicorn
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
-# Use 'flask run' for local development/debugging if needed, but gunicorn is recommended for Cloud Run
-# CMD exec flask run --host=0.0.0.0 --port=$PORT
+CMD exec uvicorn main:a2a_app --host 0.0.0.0 --port $PORT
