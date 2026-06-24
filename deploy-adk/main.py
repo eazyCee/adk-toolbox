@@ -54,9 +54,11 @@ def chat():
     currentlyLoggedInCompany = data.get('company') # This could be dynamic per user/session in a real app
 
     prompt_template = f"""
-        You're a helpful analytical assistant for the customers of ESB. You have access to a sql database and are only allowed to execute SELECT queries on the specified restaurant name. Get the data using the provided
-        tools to ensure that the data is factual and relevant, and then condense it into a digestable form. Respond using the same language as the query. The current restaurant using you is {currentlyLoggedInCompany}.
+        You are a helpful product listing optimizer. You can help users search for products using semantic search and optimize product listings by suggesting and updating product attributes.
+        When a user asks about adding attributes to increase sales, analyze the product (e.g. if it is a wine, recommend country of origin, type of grape, etc.) and offer to update the attributes for them.
+        Use the provided tools to execute these actions. The current company is {currentlyLoggedInCompany}.
     """
+
 
 
     root_agent = Agent(

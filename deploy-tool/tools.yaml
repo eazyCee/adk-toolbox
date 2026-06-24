@@ -1,101 +1,55 @@
 sources:
-  bigquery-source:
-    kind: bigquery
-    project: ${PROJECT_ID}
+  alloydb-pg-source:
+    kind: postgres
+    host: ${DB_HOST}
+    port: 5432
+    user: ${DB_USER}
+    password: ${DB_PASS}
+    database: ${DB_NAME}
 tools:
-  get-peak-hours:
-    kind: bigquery-sql
-    source: bigquery-source
-    description: |
-        "get peak hours of the restaurant. Takes the restaurant name to put into the query       
-        Example:
-        {{
-            "restaurant": "remboelan"
-        }}"
-    statement: |
-        SELECT 
-            EXTRACT(HOUR FROM salesDateIn) AS HourOfDay, 
-            COUNT(DISTINCT salesNum) AS NumberOfTransactions 
-        FROM `esbpoc.tr_saleshead_*`
-        WHERE _TABLE_SUFFIX = @restaurant
-        GROUP BY HourOfDay ORDER BY NumberOfTransactions DESC;
+  search-product-recommendations:
+    kind: postgres-sql
+    source: alloydb-pg-source
+    description: >-
+      Search for products based on user needs.
+      Use this tool to search for products. This tool requires the user's needs.
     parameters:
-      - name: restaurant
+      - name: query
         type: string
-        description: Name of restaurant
-  get-total-sales:
-    kind: bigquery-sql
-    source: bigquery-source
-    description: |
-        "get total sales of the restaurant. Takes the restaurant name to put into the query       
-        Example:
-        {{
-            "restaurant": "remboelan"
-        }}""
+        description: The product characteristics
     statement: |
-        SELECT 
-            FORMAT_DATE('%Y-%m', salesDate) AS SaleMonth, 
-            SUM(grandTotal) AS TotalRevenue, 
-            COUNT(DISTINCT salesNum) AS NumberOfTransactions, 
-            AVG(grandTotal) AS AverageTransactionValue 
-        FROM `esbpoc.tr_saleshead_*`
-        WHERE _TABLE_SUFFIX = @restaurant
-        GROUP BY SaleMonth 
-        ORDER BY SaleMonth;
+      SELECT
+        plu AS product_id,
+        product_name AS name,
+        product_description AS description,
+        atribut AS attributes
+      FROM
+        products
+      ORDER BY
+        embedding('gemini-embedding-001', $1)::vector <=> embedding
+      LIMIT 5;
+  update-product-attributes:
+    kind: postgres-sql
+    source: alloydb-pg-source
+    description: >-
+      Update or add attributes to a product.
+      Use this tool to set or update the attributes array of a product.
+      This tool requires the product PLU (product ID) and the list of attributes in JSON array format.
     parameters:
-      - name: restaurant
+      - name: plu
         type: string
-        description: Name of restaurant
-  get-peak-day:
-    kind: bigquery-sql
-    source: bigquery-source
-    description: |
-        "get the peak DAY of the restaurant. Takes the restaurant name to put into the query       
-        Example:
-        {{
-            "restaurant": "remboelan"
-        }}""
+        description: The PLU (unique identifier) of the product.
+      - name: attributes
+        type: string
+        description: A JSON array string of attributes to add (e.g. '["France", "Cabernet Sauvignon"]').
     statement: |
-        SELECT 
-            EXTRACT(DAYOFWEEK FROM salesDate) AS DayOfWeek, 
-            COUNT(DISTINCT salesNum) AS NumberOfTransactions         
-        FROM `esbpoc.tr_saleshead_*`
-        WHERE _TABLE_SUFFIX = @restaurant 
-        GROUP BY DayOfWeek 
-        ORDER BY NumberOfTransactions DESC;
-    parameters:
-      - name: restaurant
-        type: string
-        description: Name of restaurant
-  get-branch-performance:
-    kind: bigquery-sql
-    source: bigquery-source
-    description: |
-        "get the sales performance of the restaurant's branches. Takes the restaurant name to put into the query       
-        Example:
-        {{
-            "restaurant": "remboelan"
-        }}""
-    statement: |
-        SELECT 
-            branchID,
-            branchName,
-            SUM(grandTotal) AS TotalRevenue, 
-            COUNT(DISTINCT salesNum) AS NumberOfTransactions, 
-            AVG(grandTotal) AS AverageTransactionValue, SUM(paxTotal) AS TotalGuestsServed         
-        FROM `esbpoc.tr_saleshead_*`
-        WHERE _TABLE_SUFFIX = @restaurant
-        GROUP BY branchID, branchName
-        ORDER BY TotalRevenue DESC;
-    parameters:
-      - name: restaurant
-        type: string
-        description: Name of restaurant
+      UPDATE products
+      SET 
+        atribut = ARRAY(SELECT jsonb_array_elements_text($2::jsonb)),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE 
+        plu = $1;
 toolsets:
   my-toolset:
-    - get-peak-hours
-    - get-total-sales
-    - get-branch-performance
-    - get-peak-day
-
-    
+    - search-product-recommendations
+    - update-product-attributes
