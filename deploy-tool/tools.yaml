@@ -41,11 +41,11 @@ tools:
         description: The PLU (unique identifier) of the product.
       - name: attributes
         type: string
-        description: A JSON array string of attributes to add (e.g. '["France", "Cabernet Sauvignon"]').
+        description: A JSON array string of attributes (e.g. '[{"name": "Country of Origin", "value": "France"}, {"name": "Type of Grape", "value": "Cabernet Sauvignon"}]').
     statement: |
       UPDATE products
       SET 
-        atribut = ARRAY(SELECT jsonb_array_elements_text($2::jsonb)),
+        atribut = ARRAY(SELECT jsonb_array_elements($2::jsonb)::text),
         updated_at = CURRENT_TIMESTAMP
       WHERE 
         plu = $1;
